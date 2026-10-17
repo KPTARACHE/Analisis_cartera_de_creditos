@@ -1,12 +1,15 @@
 -- ============================================================
--- SOLUCION FINAL - Proyecto Avanzado SQL
--- FinCore S.A.
--- Alumna: Kellys
+-- Análisis de cartera de créditos - FinCore S.A.
+-- Autora: Kellys Tarache
 -- Motor: MySQL 8.0+
 --
--- IMPORTANTE:
--- Ejecutar primero el archivo de datos original datos_fincore.sql
--- y luego este script sobre la base fincore_sa.
+-- Construye la capa de análisis y control de una cartera de
+-- créditos: clasificación de mora, vistas, auditoría automática,
+-- procedimientos transaccionales, reportes y optimización.
+--
+-- Orden de ejecución:
+--   1. sql/01_datos_fincore.sql   (crea la base y carga datos)
+--   2. sql/02_solucion_fincore.sql (este archivo)
 -- ============================================================
 
 USE fincore_sa;
