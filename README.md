@@ -2,12 +2,29 @@
 
 ## 📌 Contexto 
 
-**Problema:** una entidad financiera necesita saber dónde está su riesgo de mora, qué clientes concentran la exposición y si sus tasas reflejan el riesgo de cada cliente.
-**Datos:** base ficticia de FinCore S.A. con 20 clientes, 6 productos de crédito, 21 préstamos y 47 pagos (MySQL 8.0).
-**Qué se construyó:** clasificación de mora, vistas de cartera, auditoría automática con triggers, procedimientos transaccionales de pago y refinanciación, reportes ejecutivos y optimización con índices.
-**Resultado principal:** el 77% del saldo de la cartera se concentra en solo 5 clientes, y toda la mora proviene de clientes de categoría C y D, aunque la categoría D no paga la tasa más alta.
+- **Problema:** una entidad financiera necesita saber dónde está su riesgo de mora, qué clientes concentran la exposición y si sus tasas reflejan el riesgo de cada cliente.
+- **Datos:** base ficticia de FinCore S.A. con 20 clientes, 6 productos de crédito, 21 préstamos y 47 pagos (MySQL 8.0).
+- **Qué se construyó:** clasificación de mora, vistas de cartera, auditoría automática con triggers, procedimientos transaccionales de pago y refinanciación, reportes ejecutivos y optimización con índices.
+- **Resultado principal:** el 80% de la cartera activa se concentra en solo 5 clientes, toda la mora proviene de clientes de categoría C y D, y la tasa de interés no considera el riesgo del cliente.
 
 ---
+
+## Principales hallazgos
+
+- **Exposición concentrada:** los 5 principales deudores suman $640.000, el 80% de la cartera activa. Los dos primeros (Miguel Ángel Fuentes y Constructora Norteña) suman $403.000, la mitad de la cartera, y el primero tiene una exposición 4,2 veces mayor al promedio por cliente ($48.629).
+- **La mora se concentra en las categorías de mayor riesgo:** todo el saldo en mora ($55.700) pertenece a clientes de categoría C y D. Las categorías A y B no registran mora, por lo que la clasificación de riesgo sí anticipa el incumplimiento.
+- **La mora aparece directamente en tramos graves:** no hay préstamos en mora temprana ni media. El 7% del saldo activo está sobre 60 días de atraso y $15.700 superan los 90 días, con alta probabilidad de pérdida. Esto sugiere que los atrasos se detectan tarde.
+- **La tasa no considera el riesgo del cliente:** en los 21 préstamos, la tasa aplicada es exactamente la tasa del producto. Un cliente A y uno D pagan lo mismo por el mismo crédito, por lo que los clientes de bajo riesgo terminan subsidiando la pérdida esperada de los de alto riesgo.
+
+---
+
+## Recomendaciones
+
+1. **Definir límites de exposición por cliente** y revisar las operaciones de los principales deudores, que concentran el 80% de la cartera activa.
+2. **Incorporar un recargo de tasa por categoría de riesgo**, para que el precio de cada crédito refleje la pérdida esperada del cliente y no solo el producto.
+3. **Endurecer las condiciones para clientes C y D** (montos menores, plazos más cortos y garantías), ya que el 100% de sus préstamos vigentes está en mora.
+4. **Gestionar la cobranza desde el primer día de atraso**, con alertas por días de mora, ya que hoy los casos aparecen directamente sobre 60 días.
+5. **Ejecutar el resumen mensual de forma periódica** para seguir la evolución de la morosidad en el tiempo.
 
 ## 🎯 Objetivos del análisis
 
@@ -31,16 +48,7 @@ MySQL 8.0 · funciones · vistas · triggers · procedimientos almacenados · tr
 
 ---
 
-## Principales hallazgos
-
-- **Exposición concentrada:** los 5 principales deudores suman $640.000, el 77% del saldo total de la cartera. Los dos primeros (Miguel Ángel Fuentes y Constructora Norteña) suman $403.000, casi la mitad, y el primero tiene una exposición 4,2 veces mayor al promedio por cliente ($48.629).
-- **La mora se concentra en las categorías de mayor riesgo:** todo el saldo en mora ($55.700) pertenece a clientes de categoría C y D. Las categorías A y B no registran mora, por lo que la clasificación de riesgo sí anticipa el incumplimiento.
-- **La mora aparece directamente en tramos graves:** no hay préstamos en mora temprana ni media. El 7% del saldo activo está sobre 60 días de atraso y $15.700 superan los 90 días, con alta probabilidad de pérdida. Esto sugiere que los atrasos se detectan tarde.
-- **El precio no sigue al riesgo en el tramo más alto:** en el segmento Personal, la categoría D paga una tasa promedio menor (25%) que la C (28%) e igual a la B. En el segmento Empresarial, C y D pagan la misma tasa (18%).
-
----
-
-# Las categorías de riesgo consideradas son:
+## Categorías de riesgo
 
 - A — Excelente
 - B — Bueno
@@ -49,16 +57,15 @@ MySQL 8.0 · funciones · vistas · triggers · procedimientos almacenados · tr
 
 ---
 
-# Archivos del proyecto
+## Archivos del proyecto
 
-El proyecto está compuesto principalmente por:
+### `sql/01_datos_fincore.sql`
 
-~~~text
-FinCore/
-│
-├── 01_datos_fincore.sql
-├── 02_Solucion_FinCore.sql
-~~~
+Contiene la estructura y los datos iniciales de la base de datos.
+
+### `sql/02_solucion_fincore.sql`
+
+Contiene la solución desarrollada para el proyecto:
 
 ### `datos_fincore.sql`
 
@@ -166,7 +173,7 @@ Usa dos CTEs (`exposicion` y `promedio`) y un `CROSS JOIN` para comparar a los 5
 
 ![Top 5 exposición crediticia](Visualizaciones/Top%205%20Exposición%20crediticia.png)
 
-*Lectura: los dos principales clientes suman $403.000, casi la mitad del saldo total. El primero supera en 4,2 veces el promedio por cliente; el quinto ya está bajo el promedio.*
+*Lectura: los dos principales clientes suman $403.000, la mitad de la cartera activa. El primero supera en 4,2 veces el promedio por cliente; el quinto ya está bajo el promedio.*
 
 ### Historial de pagos
 
@@ -182,7 +189,7 @@ Tasa promedio, créditos vencidos y porcentaje de cartera en riesgo, entendido c
 
 ![Reporte por segmento y riesgo](Visualizaciones/Reporte_categoría-Riesgo.png)
 
-*Lectura: toda la mora se concentra en las categorías C y D. Sin embargo, en el segmento Personal la categoría D paga una tasa menor (25%) que la C (28%), por lo que el precio no refleja el riesgo en el tramo más alto.*
+*Lectura: toda la mora se concentra en las categorías C y D. Las diferencias de tasa entre categorías no responden al riesgo, sino a los productos que tomó cada grupo: la tasa aplicada es siempre la tasa del producto.*
 
 ---
 
@@ -210,7 +217,7 @@ Como MySQL no soporta `CREATE INDEX IF NOT EXISTS`, se creó un procedimiento au
 
 ---
 
-# Principales aprendizajes
+## Principales aprendizajes
 
 Este proyecto permitió profundizar en el uso de SQL para resolver problemas que van más allá de consultas simples.
 
@@ -224,17 +231,7 @@ Las principales habilidades desarrolladas fueron:
 
 ---
 
-# Recomendaciones
-
-1. **Definir límites de exposición por cliente** y revisar las operaciones de los 4 principales deudores, que concentran la mayor parte del saldo.
-2. **Revisar la tasa de la categoría D**, que hoy paga menos que la C en el segmento Personal y lo mismo que la C en el Empresarial.
-3. **Generar alertas por días de mora y no solo por estado**, para actuar antes de que un crédito se declare vencido.
-4. **Implementar seguimiento desde el primer día de atraso**, ya que hoy los casos aparecen directamente sobre 60 días de mora.
-5. **Ejecutar el resumen mensual de forma periódica** para seguir la evolución de la morosidad en el tiempo.
-
----
-
-# Conclusión
+## Conclusión
 
 La cartera de FinCore es mayormente sana (93% del saldo al día), pero frágil por tres razones:
 
@@ -244,8 +241,4 @@ La cartera de FinCore es mayormente sana (93% del saldo al día), pero frágil p
 
 **Propuesta:** fijar límites de exposición por cliente, incorporar un recargo de tasa por categoría de riesgo, endurecer las condiciones para clientes C y D, gestionar la cobranza desde el primer día de atraso y evitar que la refinanciación reinicie los días de mora. La morosidad por saldo (hoy 6,97%) debería ser el indicador principal de seguimiento.
 
-La solución combina:
-
-**SQL + automatización + auditoría + análisis financiero + optimización**
-
-A través de funciones, vistas, triggers, procedimientos almacenados, consultas analíticas y optimización mediante índices, se construyó una solución capaz de apoyar distintos procesos de gestión financiera y análisis de cartera.
+La solución combina **SQL + automatización + auditoría + análisis financiero + optimización**: a través de funciones, vistas, triggers, procedimientos almacenados, consultas analíticas e índices, se construyó una base capaz de apoyar la gestión financiera y el análisis de cartera.
