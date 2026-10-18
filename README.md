@@ -67,14 +67,6 @@ Contiene la estructura y los datos iniciales de la base de datos.
 
 Contiene la solución desarrollada para el proyecto:
 
-### `datos_fincore.sql`
-
-Contiene la estructura y los datos iniciales de la base de datos.
-
-### `02_Solucion_FinCore.sql`
-
-Contiene la solución desarrollada para el proyecto:
-
 - Función de clasificación de mora.
 - Vistas.
 - Trigger de auditoría.
