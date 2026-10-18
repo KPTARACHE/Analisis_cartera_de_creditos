@@ -1,18 +1,15 @@
-# Proyecto Análisis de cartera de créditos en SQL
+# Análisis de cartera de créditos en SQL
 
-## 📌 Descripción del proyecto
+## 📌 Contexto 
 
-Proyecto en SQL desarrollado sobre una base de datos financiera ficticia de **FinCore S.A.**, orientada a la gestión de clientes, productos crediticios, préstamos, pagos, morosidad y riesgo de cartera.
-
-El proyecto busca aplicar SQL no solo para realizar consultas, sino también para construir soluciones orientadas a la **gestión financiera, control de cartera, auditoría, automatización de procesos y análisis ejecutivo**.
-
-Se trabajó con **MySQL 8.0+**, utilizando funciones, vistas, triggers, procedimientos almacenados, transacciones, CTEs, consultas analíticas e índices para optimización.
+**Problema:** una entidad financiera necesita saber dónde está su riesgo de mora, qué clientes concentran la exposición y si sus tasas reflejan el riesgo de cada cliente.
+**Datos:** base ficticia de FinCore S.A. con 20 clientes, 6 productos de crédito, 21 préstamos y 47 pagos (MySQL 8.0).
+**Qué se construyó:** clasificación de mora, vistas de cartera, auditoría automática con triggers, procedimientos transaccionales de pago y refinanciación, reportes ejecutivos y optimización con índices.
+**Resultado principal:** el 77% del saldo de la cartera se concentra en solo 5 clientes, y toda la mora proviene de clientes de categoría C y D, aunque la categoría D no paga la tasa más alta.
 
 ---
 
-# 🎯 Objetivos del proyecto
-
-Los principales objetivos fueron:
+## 🎯 Objetivos del análisis
 
 - Analizar el estado de la cartera de créditos.
 - Clasificar los préstamos según sus días de mora.
@@ -28,157 +25,27 @@ Los principales objetivos fueron:
 - Optimizar consultas mediante índices.
 - Validar el funcionamiento de las soluciones mediante pruebas.
 
- # Tecnologías y herramientas utilizadas
+ ## Tecnologías y herramientas utilizadas
 
-- MySQL 8.0+
-- SQL
-- Funciones
-- Vistas
-- Triggers
-- Procedimientos almacenados
-- Transacciones
-- Índices
-- EXPLAIN
-- `information_schema`
+MySQL 8.0 · funciones · vistas · triggers · procedimientos almacenados · transacciones (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) · control de errores con `SIGNAL` · bloqueo de registros con `FOR UPDATE` · CTEs · índices · `EXPLAIN` · `information_schema`
 
 ---
 
----
+## Principales hallazgos
 
-# Base de datos
-
-La base de datos utilizada se denomina:
-
-`fincore_sa`
-
-El proyecto trabaja principalmente con las siguientes tablas:
-
-- `clientes`
-- `productos_credito`
-- `prestamos`
-- `pagos`
-- `auditoria_prestamos`
-- `resumen_mensual`
+- **Exposición concentrada:** los 5 principales deudores suman $640.000, el 77% del saldo total de la cartera. Los dos primeros (Miguel Ángel Fuentes y Constructora Norteña) suman $403.000, casi la mitad, y el primero tiene una exposición 4,2 veces mayor al promedio por cliente ($48.629).
+- **La mora se concentra en las categorías de mayor riesgo:** todo el saldo en mora ($55.700) pertenece a clientes de categoría C y D. Las categorías A y B no registran mora, por lo que la clasificación de riesgo sí anticipa el incumplimiento.
+- **La mora aparece directamente en tramos graves:** no hay préstamos en mora temprana ni media. El 7% del saldo activo está sobre 60 días de atraso y $15.700 superan los 90 días, con alta probabilidad de pérdida. Esto sugiere que los atrasos se detectan tarde.
+- **El precio no sigue al riesgo en el tramo más alto:** en el segmento Personal, la categoría D paga una tasa promedio menor (25%) que la C (28%) e igual a la B. En el segmento Empresarial, C y D pagan la misma tasa (18%).
 
 ---
 
-# Modelo de información
-
-La estructura representa una operación básica de una institución financiera:
-
-~~~text
-CLIENTES
-   │
-   ├───────────────┐
-   │               │
-   ▼               ▼
-PRÉSTAMOS     INFORMACIÓN
-   │           DEL CLIENTE
-   │
-   ├──────────────► PRODUCTOS_CREDITO
-   │
-   └──────────────► PAGOS
-                     │
-                     ▼
-              HISTORIAL DE PAGOS
-
-PRÉSTAMOS
-   │
-   └──────────────► AUDITORIA_PRESTAMOS
-
-PRÉSTAMOS + PAGOS
-   │
-   └──────────────► RESUMEN_MENSUAL
-~~~
-
----
-
-# Principales entidades
-
-## Clientes
-
-Contiene información de los clientes, incluyendo:
-
-- Identificación.
-- Nombre.
-- Email.
-- Teléfono.
-- Ciudad.
-- Segmento.
-- Categoría de riesgo.
-- Fecha de alta.
-
-Las categorías de riesgo consideradas son:
+# Las categorías de riesgo consideradas son:
 
 - A — Excelente
 - B — Bueno
 - C — Regular
 - D — Alto riesgo
-
----
-
-## Productos de crédito
-
-Contiene la información de los productos ofrecidos por FinCore.
-
-Entre ellos:
-
-- Crédito Personal Flex
-- Crédito Personal Plus
-- Crédito Empresarial Básico
-- Crédito Empresarial Pro
-- Crédito Hipotecario
-- Crédito Automotriz
-
-Cada producto contiene información como:
-
-- Tipo de crédito.
-- Tasa anual.
-- Plazo mínimo.
-- Plazo máximo.
-- Monto mínimo.
-- Monto máximo.
-
----
-
-## Préstamos
-
-La tabla `prestamos` contiene la información de cada operación crediticia.
-
-Entre sus principales atributos:
-
-- Cliente.
-- Producto.
-- Monto otorgado.
-- Tasa aplicada.
-- Plazo.
-- Fecha de otorgamiento.
-- Fecha de vencimiento.
-- Cuota mensual.
-- Saldo pendiente.
-- Estado.
-- Días de mora.
-
-Los estados utilizados incluyen:
-
-- Activo
-- Vencido
-- Cancelado
-- Refinanciado
-
----
-
-## Pagos
-
-La tabla `pagos` registra los pagos realizados sobre los préstamos.
-
-Incluye:
-
-- Préstamo asociado.
-- Fecha de pago.
-- Monto pagado.
-- Tipo de pago.
-- Canal utilizado.
 
 ---
 
@@ -189,15 +56,15 @@ El proyecto está compuesto principalmente por:
 ~~~text
 FinCore/
 │
-├── datos_fincore.sql
-├── Solucion_FinCore_Kellys_3..sql
+├── 01_datos_fincore.sql
+├── 02_Solucion_FinCore.sql
 ~~~
 
 ### `datos_fincore.sql`
 
 Contiene la estructura y los datos iniciales de la base de datos.
 
-### `Solucion_FinCore_Kellys_3..sql`
+### `02_Solucion_FinCore.sql`
 
 Contiene la solución desarrollada para el proyecto:
 
@@ -213,27 +80,19 @@ Contiene la solución desarrollada para el proyecto:
 
 ## Desarrollo del proyecto
 
-# Función de clasificación de mora
+### 1. Función de clasificación de mora
 
-Se creó la función:
-
-`fn_clasificar_mora`
-
-Su objetivo es clasificar los préstamos según la cantidad de días de mora.
-
-La clasificación utilizada es:
+`fn_clasificar_mora` recibe los días de mora de un préstamo y devuelve su tramo según la política interna:
 
 | Días de mora | Categoría |
-|---:|---|
+|---|---|
 | 0 o menos | Al día |
-| 1–30 | Mora Temprana |
-| 31–60 | Mora Media |
-| 61–90 | Mora Grave |
-| +90 | Mora Crítica |
+| 1 – 30 | Mora Temprana |
+| 31 – 60 | Mora Media |
+| 61 – 90 | Mora Grave |
+| Más de 90 | Mora Crítica |
 
-La función implementada fue:
-
-~~~sql
+```sql
 CREATE FUNCTION fn_clasificar_mora(dias_mora INT)
 RETURNS VARCHAR(30)
 DETERMINISTIC
@@ -250,652 +109,104 @@ BEGIN
         RETURN 'Mora Crítica (+90d)';
     END IF;
 END
-~~~
+```
 
-### Ejemplo
+### 2. Vistas de análisis
 
-Un préstamo con:
+- **`vw_estado_cartera`:** une clientes, préstamos y productos. Calcula el porcentaje de saldo restante y la categoría de mora de cada préstamo.
+- **`vw_resumen_clientes`:** consolida por cliente el total de préstamos, monto otorgado, saldo pendiente, máximo de días de mora y si tiene mora activa. Usa `LEFT JOIN` para incluir también a los clientes sin préstamos.
 
-`180 días de mora`
+### 3. Trigger de auditoría
 
-es clasificado como:
+`trg_auditoria_estado` se ejecuta después de cada `UPDATE` sobre `prestamos` y registra en `auditoria_prestamos` cualquier cambio en el **estado** o en los **días de mora**: valor anterior, valor nuevo, fecha y usuario. Usa el operador `<=>` para comparar correctamente valores nulos.
 
-`Mora Crítica (+90d)`
+**Prueba:** se cambió el préstamo 2 a `Vencido` con 45 días de mora y luego se restauraron sus valores originales.
 
----
+![Auditoría de préstamos](Visualizaciones/Auditoria_prestamos.png)
 
-# Vista de estado de cartera
+*Lectura: el trigger registró 4 cambios en el préstamo 2: el paso a Vencido con 45 días de mora y la restauración a sus valores originales.*
 
-Se creó la vista:
+### 4. Procedimientos almacenados
 
-`vw_estado_cartera`
+**`sp_registrar_pago`:** registra un pago dentro de una transacción.
+1. Verifica que el préstamo exista.
+2. Bloquea el registro con `FOR UPDATE` para evitar pagos simultáneos.
+3. Valida que el préstamo esté Activo o Vencido, que el monto sea mayor que cero y que no supere el saldo.
+4. Descuenta el pago del saldo y lo registra en `pagos`.
+5. Si el saldo llega a cero, marca el préstamo como `Cancelado`.
+6. Ante cualquier error, ejecuta `ROLLBACK` y devuelve el mensaje.
 
-Su objetivo es consolidar información relevante de cada préstamo.
+**`sp_generar_resumen_mensual`:** calcula para un año y mes los préstamos otorgados, el monto total, los pagos recibidos, los préstamos en mora y la tasa de morosidad. Usa `ON DUPLICATE KEY UPDATE` para actualizar el período si ya existe, sin duplicarlo.
 
-La vista integra información proveniente de:
+![Resumen mensual](Visualizaciones/Resumen_mensual.png)
 
-- Clientes.
-- Préstamos.
-- Productos de crédito.
+*Lectura: se generaron 3 períodos. La tasa de morosidad es 0% porque los préstamos otorgados entre enero y marzo de 2023 no registran mora.*
 
-Además, calcula:
+**`sp_refinanciar_prestamo`:** marca el préstamo original como `Refinanciado` y crea uno nuevo con el saldo pendiente, el nuevo plazo y la nueva tasa, calculando la cuota mensual. Todo ocurre en una sola transacción.
 
-- Porcentaje de saldo restante.
-- Días de mora.
-- Categoría de mora.
+![Conteo final](Visualizaciones/Conteo_final_auditoria_y_resumen_mensual.png)
 
-La consulta utiliza la función creada anteriormente:
-
-~~~sql
-fn_clasificar_mora(pt.dias_mora) AS categoria_mora
-~~~
-
-Esto permite disponer de una visión más completa del estado de la cartera.
+*Verificación: 4 registros de auditoría y 3 períodos de resumen mensual.*
 
 ---
 
-# Vista de resumen por cliente
+## 📈 Consultas analíticas
 
-Se creó la vista:
+### Aging de cartera
 
-`vw_resumen_clientes`
+Agrupa los préstamos Activos y Vencidos por tramo de mora y calcula el saldo y su peso sobre el total.
 
-Esta vista consolida la información crediticia de cada cliente.
+![Aging de cartera](Visualizaciones/Clasificación_mora.png)
 
-Los principales indicadores son:
+*Lectura: el 93% del saldo activo está al día. El 7% restante ($55.700) está en mora grave o crítica; no hay casos en mora temprana ni media, lo que indica que los atrasos se detectan tarde.*
 
-- Total de préstamos.
-- Monto total otorgado.
-- Saldo pendiente consolidado.
-- Máximo de días de mora.
-- Existencia de mora activa.
+### Top 5 de exposición crediticia
 
-Ejemplo de cálculo:
+Usa dos CTEs (`exposicion` y `promedio`) y un `CROSS JOIN` para comparar a los 5 clientes con mayor saldo contra el promedio de la cartera.
 
-~~~sql
-COUNT(pt.id_prestamo) AS total_prestamos,
-COALESCE(SUM(pt.monto_otorgado), 0) AS total_monto_otorgado,
-COALESCE(SUM(pt.saldo_pendiente), 0) AS total_saldo_pendiente_consolidado,
-COALESCE(MAX(pt.dias_mora), 0) AS max_dias_mora
-~~~
+![Top 5 exposición crediticia](Visualizaciones/Top%205%20Exposición%20crediticia.png)
 
-Esta vista permite analizar la exposición crediticia desde la perspectiva del cliente.
+*Lectura: los dos principales clientes suman $403.000, casi la mitad del saldo total. El primero supera en 4,2 veces el promedio por cliente; el quinto ya está bajo el promedio.*
 
----
+### Historial de pagos
 
-# Trigger de auditoría
+Últimos 20 pagos con su préstamo, cliente y producto.
 
-Se creó el trigger:
+![Últimos 20 pagos](Visualizaciones/Ultimos_20_pagos.png)
 
-`trg_auditoria_estado`
+*Lectura: los pagos más recientes incluyen cargos por mora de los préstamos vencidos, registrados como pagos separados de la cuota.*
 
-Este trigger permite registrar automáticamente modificaciones realizadas sobre los préstamos.
+### Reporte ejecutivo por segmento y categoría de riesgo
 
-Se auditan específicamente cambios en:
+Tasa promedio, créditos vencidos y porcentaje de cartera en riesgo, entendido como el saldo de préstamos con días de mora sobre el saldo total del grupo.
 
-- Estado del préstamo.
-- Días de mora.
+![Reporte por segmento y riesgo](Visualizaciones/Reporte_categoría-Riesgo.png)
 
-Cuando uno de estos campos cambia, se registra:
-
-- ID del préstamo.
-- Campo modificado.
-- Valor anterior.
-- Valor nuevo.
-- Fecha del cambio.
-
-Ejemplo:
-
-~~~sql
-IF NOT (OLD.estado <=> NEW.estado) THEN
-
-    INSERT INTO auditoria_prestamos (
-        id_prestamo,
-        campo_modificado,
-        valor_anterior,
-        valor_nuevo,
-        fecha_cambio
-    )
-    VALUES (
-        NEW.id_prestamo,
-        'estado',
-        OLD.estado,
-        NEW.estado,
-        NOW()
-    );
-
-END IF;
-~~~
-
-Esto permite mantener una trazabilidad de modificaciones relevantes sobre la cartera.
+*Lectura: toda la mora se concentra en las categorías C y D. Sin embargo, en el segmento Personal la categoría D paga una tasa menor (25%) que la C (28%), por lo que el precio no refleja el riesgo en el tramo más alto.*
 
 ---
 
-# Procedimiento para registrar pagos
+## 🚀 Optimización con índices
 
-Se creó el procedimiento:
+Se analizó con `EXPLAIN` la consulta del historial de pagos antes y después de crear tres índices:
 
-`sp_registrar_pago`
+```sql
+idx_pagos_fecha_id              ON pagos (fecha_pago DESC, id_pago DESC)
+idx_pagos_prestamo_fecha        ON pagos (id_prestamo, fecha_pago)
+idx_prestamos_cliente_producto  ON prestamos (id_cliente, id_producto)
+```
 
-Su objetivo es automatizar el registro de pagos y actualizar el saldo pendiente del préstamo.
+Como MySQL no soporta `CREATE INDEX IF NOT EXISTS`, se creó un procedimiento auxiliar que consulta `information_schema.statistics` y crea cada índice solo si no existe. Así el script se puede ejecutar varias veces sin errores.
 
-El procedimiento incorpora distintas validaciones.
+**Antes de los índices:**
 
-## Validaciones implementadas
+![EXPLAIN antes de índices](Visualizaciones/Explain_antes_de_indices.png)
 
-### Existencia del préstamo
+**Después de los índices:**
 
-Se verifica que el préstamo exista.
+![EXPLAIN después de índices](Visualizaciones/Explain_despues_de_indices.png)
 
-~~~sql
-IF v_existe = 0 THEN
-    SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'El préstamo no existe.';
-END IF;
-~~~
-
-### Estado del préstamo
-
-Solo se permiten pagos para préstamos:
-
-- Activos.
-- Vencidos.
-
-No se permiten pagos sobre préstamos:
-
-- Cancelados.
-- Refinanciados.
-
-### Validación del monto
-
-El pago debe ser mayor que cero.
-
-Además, no puede superar el saldo pendiente.
-
-~~~sql
-IF p_monto <= 0 THEN
-    SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'El monto del pago debe ser mayor que cero.';
-END IF;
-~~~
-
-~~~sql
-IF p_monto > v_saldo THEN
-    SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'El monto del pago supera el saldo pendiente.';
-END IF;
-~~~
-
----
-
-# Uso de transacciones
-
-El procedimiento de registro de pagos utiliza una transacción:
-
-~~~sql
-START TRANSACTION;
-~~~
-
-Luego:
-
-1. Valida el préstamo.
-2. Bloquea el registro.
-3. Valida el monto.
-4. Actualiza el saldo.
-5. Registra el pago.
-6. Cancela el préstamo si el saldo llega a cero.
-7. Confirma la operación.
-
-Finalmente:
-
-~~~sql
-COMMIT;
-~~~
-
-En caso de error se utiliza:
-
-~~~sql
-ROLLBACK;
-~~~
-
-Esto permite mantener la consistencia de la información.
-
----
-
-# Procedimiento para generar resumen mensual
-
-Se creó:
-
-`sp_generar_resumen_mensual`
-
-Este procedimiento genera indicadores mensuales relacionados con la actividad crediticia.
-
-Los indicadores calculados son:
-
-- Total de préstamos.
-- Monto total otorgado.
-- Total de pagos recibidos.
-- Préstamos vencidos.
-- Tasa de morosidad.
-
----
-
-## Tasa de morosidad
-
-La tasa se calcula mediante:
-
-~~~sql
-(v_prestamos_vencidos / v_total_prestamos) * 100
-~~~
-
-El resultado se redondea a dos decimales.
-
-La información se almacena en:
-
-`resumen_mensual`
-
-Además, se utilizó:
-
-~~~sql
-ON DUPLICATE KEY UPDATE
-~~~
-
-para actualizar el resumen si el período ya existe.
-
-Esto evita duplicar información para un mismo año y mes.
-
----
-
-# Procedimiento de refinanciación
-
-Se creó:
-
-`sp_refinanciar_prestamo`
-
-Este procedimiento automatiza el proceso de refinanciación de un préstamo.
-
-El flujo es:
-
-1. Verificar que el préstamo exista.
-2. Obtener y bloquear la información.
-3. Validar el estado actual.
-4. Validar el nuevo plazo.
-5. Validar la nueva tasa.
-6. Calcular la nueva cuota.
-7. Cambiar el préstamo original a `Refinanciado`.
-8. Crear un nuevo préstamo utilizando el saldo pendiente.
-9. Confirmar la transacción.
-
----
-
-#  Aging de cartera
-
-Se desarrolló una consulta para construir un **aging de cartera**.
-
-El análisis agrupa los préstamos activos y vencidos según el tramo de mora.
-
-Los indicadores obtenidos son:
-
-- Tramo de mora.
-- Cantidad de préstamos.
-- Saldo en riesgo.
-- Porcentaje sobre el total de la cartera.
-
-La consulta utiliza:
-
-~~~sql
-fn_clasificar_mora(dias_mora)
-~~~
-
-Esto permite identificar rápidamente dónde se concentra el riesgo de mora.
-
----
-
-# Top 5 de exposición crediticia
-
-Se desarrolló una consulta para identificar los cinco clientes con mayor saldo pendiente.
-
-Para ello se utilizaron:
-
-- CTE `exposicion`.
-- CTE `promedio`.
-- `CROSS JOIN`.
-- Agregaciones.
-- `ORDER BY`.
-- `LIMIT`.
-
-La consulta permite comparar:
-
-- Saldo total del cliente.
-- Promedio de exposición de la cartera.
-- Diferencia respecto al promedio.
-
-Ejemplo:
-
-~~~sql
-WITH exposicion AS (
-    SELECT
-        c.id_cliente,
-        c.nombre AS cliente,
-        SUM(p.saldo_pendiente) AS saldo_total
-    FROM clientes c
-    JOIN prestamos p
-        ON c.id_cliente = p.id_cliente
-    GROUP BY
-        c.id_cliente,
-        c.nombre
-)
-~~~
-
-Este análisis permite identificar clientes con una exposición crediticia significativamente superior al promedio.
-
----
-
-# Historial de pagos
-
-Se creó una consulta para obtener los últimos 20 pagos registrados.
-
-La consulta relaciona:
-
-- Pagos.
-- Préstamos.
-- Clientes.
-- Productos de crédito.
-
-Se muestran:
-
-- ID del pago.
-- Fecha.
-- Monto.
-- Tipo de pago.
-- Canal.
-- ID del préstamo.
-- Cliente.
-- Producto.
-
-El resultado se ordena desde el pago más reciente.
-
-~~~sql
-ORDER BY
-    pg.fecha_pago DESC,
-    pg.id_pago DESC
-LIMIT 20;
-~~~
-
----
-
-# Reporte ejecutivo
-
-Se desarrolló un reporte orientado a gestión agrupando la cartera por:
-
-- Segmento.
-- Categoría de riesgo.
-
-Los principales indicadores son:
-
-- Tasa promedio.
-- Cantidad de créditos vencidos.
-- Porcentaje de cartera en riesgo.
-
-La cartera en riesgo se calcula considerando el saldo pendiente asociado a préstamos con días de mora superiores a cero.
-
-~~~sql
-SUM(
-    CASE
-        WHEN dias_mora > 0 THEN saldo_pendiente
-        ELSE 0
-    END
-)
-~~~
-
-Esto permite obtener una visión ejecutiva de la cartera según el perfil de cliente.
-
----
-
-# Optimización de consultas
-
-Como parte del proyecto también se trabajó en optimización mediante índices.
-
-Se utilizó:
-
-~~~sql
-EXPLAIN FORMAT=TRADITIONAL
-~~~
-
-para analizar el plan de ejecución de la consulta del historial de pagos.
-
----
-
-# Índices creados
-
-Se incorporaron índices adicionales sobre columnas utilizadas en:
-
-- Filtros.
-- JOIN.
-- Ordenamiento.
-
-Los índices creados fueron:
-
-~~~sql
-CREATE INDEX idx_pagos_fecha_id
-ON pagos (fecha_pago DESC, id_pago DESC);
-~~~
-
-~~~sql
-CREATE INDEX idx_pagos_prestamo_fecha
-ON pagos (id_prestamo, fecha_pago);
-~~~
-
-~~~sql
-CREATE INDEX idx_prestamos_cliente_producto
-ON prestamos (id_cliente, id_producto);
-~~~
-
-Estos índices buscan mejorar el acceso a la información utilizada frecuentemente por las consultas.
-
----
-
-# Procedimiento auxiliar para crear índices
-
-MySQL no soporta directamente:
-
-`CREATE INDEX IF NOT EXISTS`
-
-Por este motivo se creó un procedimiento auxiliar:
-
-`sp_crear_indice`
-
-Este procedimiento consulta `information_schema.statistics` para verificar si el índice ya existe antes de crearlo.
-
-La lógica principal es:
-
-~~~sql
-IF NOT EXISTS (
-    SELECT 1
-    FROM information_schema.statistics
-    WHERE table_schema = DATABASE()
-      AND table_name = p_tabla
-      AND index_name = p_indice
-)
-~~~
-
-Esto permite ejecutar nuevamente el script sin generar errores por índices duplicados.
-
----
-
-# Comparación mediante EXPLAIN
-
-Se ejecutó `EXPLAIN` antes y después de la creación de índices para evaluar el plan de ejecución.
-
-Consulta analizada:
-
-~~~sql
-EXPLAIN FORMAT=TRADITIONAL
-SELECT
-    pg.id_pago,
-    pg.fecha_pago,
-    pg.monto_pagado,
-    pg.tipo_pago,
-    pg.canal,
-    p.id_prestamo,
-    c.nombre AS cliente,
-    pc.nombre AS producto
-FROM pagos pg
-JOIN prestamos p
-    ON pg.id_prestamo = p.id_prestamo
-JOIN clientes c
-    ON p.id_cliente = c.id_cliente
-JOIN productos_credito pc
-    ON p.id_producto = pc.id_producto
-ORDER BY
-    pg.fecha_pago DESC,
-    pg.id_pago DESC
-LIMIT 20;
-~~~
-
-El objetivo fue evaluar el comportamiento de la consulta y aplicar índices sobre las columnas relevantes.
-
----
-
-# Pruebas de funcionamiento
-
-El proyecto incluye pruebas para validar las principales funcionalidades desarrolladas.
-
----
-
-## Prueba del trigger
-
-Se modificó temporalmente el estado y los días de mora de un préstamo.
-
-~~~sql
-UPDATE prestamos
-SET estado = 'Vencido',
-    dias_mora = 45
-WHERE id_prestamo = 2;
-~~~
-
-Luego se restauraron los valores originales.
-
-Esto permitió comprobar que el trigger registrara los cambios realizados en:
-
-`auditoria_prestamos`
-
----
-
-# Prueba del resumen mensual
-
-Se ejecutó el procedimiento para distintos períodos:
-
-~~~sql
-CALL sp_generar_resumen_mensual(2023, 1);
-
-CALL sp_generar_resumen_mensual(2023, 2);
-
-CALL sp_generar_resumen_mensual(2023, 3);
-~~~
-
-Posteriormente se verificó la información:
-
-~~~sql
-SELECT *
-FROM resumen_mensual
-ORDER BY anio, mes;
-~~~
-
-Esto permite comprobar la generación de múltiples períodos de información.
-
----
-
-# Verificación de resultados
-
-También se incorporó una consulta para verificar la cantidad de registros generados en las tablas de auditoría y resumen:
-
-~~~sql
-SELECT
-    'auditoria_prestamos' AS tabla,
-    COUNT(*) AS registros
-FROM auditoria_prestamos
-
-UNION ALL
-
-SELECT
-    'resumen_mensual',
-    COUNT(*)
-FROM resumen_mensual;
-~~~
-
----
-
-# Pruebas manuales opcionales
-
-El proyecto también incluye ejemplos de ejecución manual para probar los procedimientos.
-
-### Registrar un pago
-
-~~~sql
-CALL sp_registrar_pago(
-    2,
-    500.00,
-    'Cuota',
-    'App'
-);
-~~~
-
-### Refinanciar un préstamo
-
-~~~sql
-CALL sp_refinanciar_prestamo(
-    14,
-    24,
-    20.00
-);
-~~~
-
-Estas pruebas permiten validar el comportamiento de los procedimientos sobre datos reales de la base.
-
-
----
-
-# Enfoque de negocio
-
-Además del desarrollo técnico, el proyecto busca resolver problemas habituales dentro de una operación financiera.
-
-### Gestión de cartera
-
-Permite conocer:
-
-- Cuánto dinero se encuentra pendiente.
-- Qué préstamos presentan mora.
-- Qué clientes tienen mayor exposición.
-- Cómo se distribuye la cartera por riesgo.
-
-### Gestión de riesgo
-
-La clasificación de mora permite identificar rápidamente:
-
-- Clientes al día.
-- Mora temprana.
-- Mora media.
-- Mora grave.
-- Mora crítica.
-
-### Control y auditoría
-
-El trigger permite mantener trazabilidad sobre modificaciones importantes realizadas en los préstamos.
-
-### Gestión financiera
-
-El resumen mensual permite consolidar:
-
-- Créditos otorgados.
-- Monto otorgado.
-- Pagos recibidos.
-- Créditos vencidos.
-- Tasa de morosidad.
-
-### Automatización
-
-Los procedimientos almacenados permiten convertir procesos manuales en operaciones controladas y reutilizables.
+**Resultado:** después de crear los índices, `idx_pagos_prestamo_fecha` e `idx_prestamos_cliente_producto` reemplazaron a los índices automáticos de las claves foráneas y quedaron disponibles para el optimizador. Aun así, el plan no cambió: `pagos` se sigue leyendo completa (`type = ALL`, 47 filas, `Using filesort`). Con un volumen tan bajo, MySQL considera más barato escanear la tabla que usar el índice. Los índices quedan preparados para cuando la tabla crezca a miles de registros, que es donde aportan valor.
 
 ---
 
@@ -905,46 +216,33 @@ Este proyecto permitió profundizar en el uso de SQL para resolver problemas que
 
 Las principales habilidades desarrolladas fueron:
 
-- Diseño de consultas complejas.
-- Manejo de múltiples tablas relacionadas.
-- Uso de CTEs.
-- Creación de funciones.
-- Creación de vistas.
-- Automatización mediante procedimientos almacenados.
-- Implementación de triggers.
-- Manejo de transacciones.
-- Control de errores mediante `SIGNAL`.
-- Bloqueo de registros mediante `FOR UPDATE`.
-- Análisis de cartera.
-- Análisis de morosidad.
-- Análisis de exposición crediticia.
-- Construcción de reportes ejecutivos.
-- Optimización mediante índices.
-- Interpretación de planes de ejecución con `EXPLAIN`.
+- Llevar SQL más allá de las consultas: lógica de negocio en funciones, procedimientos y triggers.
+- Proteger la consistencia de los datos con transacciones, validaciones con `SIGNAL` y bloqueo de registros.
+- Diseñar scripts que se puedan ejecutar varias veces sin errores.
+- Leer un plan de ejecución y entender cuándo un índice aporta valor y cuándo no.
+- Traducir resultados técnicos en hallazgos y recomendaciones de negocio.
 
 ---
 
 # Recomendaciones
 
-Como siguientes etapas del proyecto se podrían incorporar:
-
-- Dashboard de cartera en Power BI.
-- Indicadores de cartera en tiempo real.
-- Evolución mensual de la morosidad.
-- Score de riesgo.
-- Análisis de concentración de cartera.
-- Alertas automáticas para préstamos en mora.
-- Análisis de rentabilidad por producto.
-- Integración con Python para análisis predictivo.
-- Modelo de predicción de incumplimiento.
-- Automatización del reporte ejecutivo.
-- Conexión SQL + Power BI.
+1. **Definir límites de exposición por cliente** y revisar las operaciones de los 4 principales deudores, que concentran la mayor parte del saldo.
+2. **Revisar la tasa de la categoría D**, que hoy paga menos que la C en el segmento Personal y lo mismo que la C en el Empresarial.
+3. **Generar alertas por días de mora y no solo por estado**, para actuar antes de que un crédito se declare vencido.
+4. **Implementar seguimiento desde el primer día de atraso**, ya que hoy los casos aparecen directamente sobre 60 días de mora.
+5. **Ejecutar el resumen mensual de forma periódica** para seguir la evolución de la morosidad en el tiempo.
 
 ---
 
 # Conclusión
 
-El proyecto **FinCore S.A.** permitió desarrollar una solución integral utilizando MySQL para la gestión y análisis de una cartera de créditos.
+La cartera de FinCore es mayormente sana (93% del saldo al día), pero frágil por tres razones:
+
+1. **Depende de pocos clientes:** uno solo concentra el 25% de la cartera activa; su incumplimiento equivaldría a 3,6 veces toda la mora actual.
+2. **No cobra el riesgo:** la tasa la define el producto y no la categoría del cliente, mientras que el 100% de los préstamos vigentes de categoría C y D está en mora.
+3. **Detecta la mora tarde:** los atrasos aparecen directamente sobre 60 días, cuando la recuperación es más difícil.
+
+**Propuesta:** fijar límites de exposición por cliente, incorporar un recargo de tasa por categoría de riesgo, endurecer las condiciones para clientes C y D, gestionar la cobranza desde el primer día de atraso y evitar que la refinanciación reinicie los días de mora. La morosidad por saldo (hoy 6,97%) debería ser el indicador principal de seguimiento.
 
 La solución combina:
 
